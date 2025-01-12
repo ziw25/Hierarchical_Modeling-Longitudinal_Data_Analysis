@@ -1,0 +1,192 @@
+---
+title: "Final"
+author: "Ziwen Zhang"
+date: "2023-08-02"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_height: 6.5
+    fig_width: 9.5
+---
+
+## Question 1
+You have data on area covered by bacterial growth on a petri dish, over a period of time. You also have data on several possibly related variables (to be adjusted for), such as InSize, and two measures: MOL15 and MGLP. Create an appropriate growth model.
+
+### load dataset and libraries
+```{r, warning=FALSE}
+bacterial_growth <- read.csv("FinalQ1.csv")
+
+library(lmerTest)
+library(lme4)
+```
+
+### Exploratory Data Analysis
+```{r}
+# check datatype
+str(bacterial_growth)
+
+# check missing value
+num_missing <- sum(is.na(bacterial_growth))
+paste("The number of missing value is: ", num_missing)
+```
+
+### fit a linear mixed effect model
+Since there are fixed effect factors such as time, InSize, MOL15 and MGLP as well as random effect factors such as ID, linear mixed effect model can be used for this task.
+```{r, warning=FALSE}
+model_1 <- lmer(Area ~ Time + InSize + MOL15 + MGLP + (1 | ID), data = bacterial_growth)
+
+summary(model_1)
+```
+
+**Interpretation: **
+Area = β0 + β1 * Time + β2 * InSize + β3 * MOL15 + β4 * MGLP  + u + ε
+
+Where:
+Area is the response variable, representing the area covered by bacterial growth.
+Time is the fixed effect predictor.
+β0 is the intercept (8.270e-01), representing the average area covered by bacterial growth when Time is 0. However, the p-value is larger than 0.05, indicating that this coefficient is not statistically significant.
+β1 is the coefficient for Time (8.235e-01), representing the expected change in area covered by bacterial growth for a one-unit increase in Time.
+
+β2 is the coefficient for InSize (5.100e-03), representing the expected change in area covered by bacterial growth for a one-unit increase in InSize. However, the p-value is larger than 0.05, indicating that this coefficient is not statistically significant.
+β3 is the coefficient for MOL15 (-6.738e-03), representing the expected change in area covered by bacterial growth for a one-unit increase in MOL15. However, the p-value is larger than 0.05, indicating that this coefficient is not statistically significant.
+β4 is the coefficient for MOL15 (-3.796e-06), representing the expected change in area covered by bacterial growth for a one-unit increase in MGLP. However, the p-value is larger than 0.05, indicating that this coefficient is not statistically significant.
+
+u represents the random intercept for ID, accounting for the variability between different ID.
+ε represents the residual term, capturing the random variability within each group.
+
+### Model Evaluation - check model assumptions
+Checking the model assumptions is an important step in analyzing the results of a mixed-effects model. It helps ensure that the model assumptions are met and that the model is valid for making inferences and interpretations. 
+```{r}
+par(mfrow = c(2,2))
+# Residual analysis
+qqnorm(resid(model_1)) 
+qqline(resid(model_1))
+plot(density(resid(model_1)))
+abline(v=0,lty=3)
+# Homoskedasticity
+plot(resid(model_1))
+abline(h=0)
+# Outliers
+plot(sort(resid(model_1)))
+```
+
+**Interpretation: **
+
+1. The quantile-quantile (Q-Q) plot is used to assess the normality assumption of the residuals by comparing observed residuals to their expected values under a normal distribution. In this instance, we observe a slight deviation at both the higher and lower tails of the Q-Q plot, suggesting that the residual distribution may not strictly follow a normal pattern.
+
+2. The density function is utilized to estimate the density of residuals, and the resulting density curve provides insights into their distribution. A symmetric and bell-shaped density plot indicates normality of the residuals. However, in this scenario, the distribution does not appear to be perfectly symmetric.
+
+3. For testing homoscedasticity, a scatterplot with residuals on the y-axis and fitted values on the x-axis is used. When the plot exhibits a random scatter of points around the horizontal line, it confirms the assumption of constant variance (homoscedasticity). In this case, the scatterplot shows no obvious pattern, except for a few outliers.
+
+4. The sorted residuals plot is employed to identify extreme values that significantly deviate from the expected pattern. In this particular analysis, several outliers are detected, although they do not seem to exert a strong influence on the overall results.
+
+**Conclusion: **
+Time plays an important role in predicting the the area covered by bacterial growth. And the longer the time is, the outcome becomes larger.
+
+## Question 2
+You are comparing two asthma treatments for reducing number of asthma attacks. Patients were randomly divided into two groups. Each group received one of the treatments. You have data on “count of asthma attacks” on a number of time periods of equal size. (First time point is the baseline.) A score IPL10, which might influence the attacks, has also been included, and has to be adjusted for.
+
+Perform an appropriate analysis to investigate if the two treatments have significantly different effects in changing the number of asthma attacks over time.
+
+### load dataset and libraries
+```{r}
+ACount <- read.csv("ACount.csv")
+```
+
+### Exploratory Data Analysis
+```{r}
+# check datatype
+ACount$Treatment <- as.factor(ACount$Treatment)
+str(ACount)
+
+# check missing value
+num_missing <- sum(is.na(ACount))
+paste("The number of missing value is: ", num_missing)
+```
+
+### fit a mixed effect model
+```{r, warning=FALSE}
+model_2 <- lmer(ACount ~ Treatment + Time + IPL10 + (1 | Patient), data = ACount)
+
+summary(model_2)
+```
+
+**Interpretation: **
+ACount = β0 + β1 * Time + β2 * Treatment + β3 * IPL10 +  u + ε
+
+Where:
+ACount is the response variable, representing the reducing number of asthma attacks.
+Time and Treatment are the fixed effect predictors.
+β0 is the intercept (3.354e+00), representing the average area covered by bacterial growth when Time is 0 and Treatment B.
+β1 is the coefficient for Time (-3.714e-01), representing the expected change in reducing number of asthma attacks for a one-unit increase in Time.
+β2 is the coefficient for Treatment (1.307e-01), representing the expected change in reducing number of asthma attacks for Treatment A compared to Treatment B. However, the p-value is larger than 0.05, indicating that this coefficient is not statistically significant.
+β3 is the coefficient for IPL10 (-1.478e-02), representing the expected change in reducing number of asthma attacks for a one-unit increase in IPL10.
+u represents the random intercept for Patient, accounting for the variability between different Patients.
+ε represents the residual term, capturing the random variability within each group.
+
+### Model Evaluation - check model assumptions
+Checking the model assumptions is an important step in analyzing the results of a mixed-effects model. It helps ensure that the model assumptions are met and that the model is valid for making inferences and interpretations.
+```{r}
+par(mfrow = c(2,2))
+# Residual analysis
+qqnorm(resid(model_2)) 
+qqline(resid(model_2))
+plot(density(resid(model_2)))
+abline(v=0,lty=3)
+# Homoskedasticity
+plot(resid(model_2))
+abline(h=0)
+# Outliers
+plot(sort(resid(model_2)))
+```
+
+**Interpretation: **
+
+1. The Q-Q plot suggests slight deviations from normality in the residuals.
+
+2. The density plot shows some fluctuations, indicating a departure from strict normality.
+
+3. The scatterplot indicates no obvious pattern, confirming homoscedasticity.
+
+4. No outliers are found in the sorted residuals plot.
+
+**Conclusion: **
+Time plays an important role in predicting the reducing number of asthma attacks. And the longer the time is, the outcome becomes smaller.
+
+## Question 3
+You are performing a clinical study to compare the change in response rate between two treatments. Patients were randomly assigned two treatment groups. Each group received one of the treatments, and their responses were recorded over time. (First time point is the baseline.)
+
+Perform an appropriate analysis to investigate if the two treatments have significantly different effects in changing the response rate over time.
+
+### load dataset and libraries
+```{r}
+Response <- read.csv("ResponseFinal.csv")
+
+# view datatype
+Response$Treatment <- as.factor(Response$Treatment)
+str(Response)
+```
+
+### fit a generalizaed linear mixed effect model
+```{r}
+model_3 <- glmer(Response ~ Treatment + Time + (1 | Patient), data = Response, family = binomial)
+
+summary(model_3)
+```
+
+**Interpretation: **
+Response = β0 + β1 * Treatment + β2 * Time  +  u + ε
+
+Where:
+Response is the response variable, representing the response rate of two treatments.
+Time and Treatment are the fixed effect predictors.
+β0 is the intercept (-0.042473), representing the average response rate when Time is 0 and Treatment T2. However, the p-value is larger than 0.05, indicating that this coefficient is not statistically significant.
+β1 is the coefficient for Treatment (0.009883), representing the expected change in response rate for Treatment T2 compared to T1. However, the p-value is larger than 0.05, indicating that this coefficient is not statistically significant.
+β2 is the coefficient for Time (0.028970), representing the expected change in Response rate for one-unit change in Time. However, the p-value is larger than 0.05, indicating that this coefficient is not statistically significant.
+u represents the random intercept for Patient, accounting for the variability between different Patients.
+ε represents the residual term, capturing the random variability within each group.
+
+**Conclusion: **
+There is no significant differences on response rate regarding treatment and time.
